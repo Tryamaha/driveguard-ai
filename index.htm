@@ -2,251 +2,631 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<title>DriveGuard AI Ultra</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
+<title>DriveGuard AI Native Cockpit</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
-  background:#02040c;
-  color:#fff;
-  overflow:hidden;
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+background:#01030a;
+color:#fff;
 }
-#map{position:fixed;inset:0;z-index:1}
+#map{
+position:fixed;
+inset:0;
+z-index:1;
+filter:saturate(1.05) contrast(1.08);
+}
 .glass{
-  background:rgba(5,10,25,.82);
-  backdrop-filter:blur(22px);
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 20px 70px rgba(0,0,0,.55);
+background:rgba(5,10,25,.74);
+backdrop-filter:blur(22px);
+border:1px solid rgba(255,255,255,.08);
+box-shadow:0 20px 70px rgba(0,0,0,.55);
 }
-.top{
-  position:absolute;z-index:999;top:10px;left:10px;right:10px;
-  border-radius:26px;padding:14px;
+.topBar{
+position:absolute;
+left:10px;
+right:10px;
+top:10px;
+z-index:999;
+border-radius:24px;
+padding:12px;
 }
-.logo{display:flex;justify-content:space-between;align-items:center;font-size:21px;font-weight:900}
-.logo span{font-size:11px;background:linear-gradient(135deg,#00e5ff,#7c4dff);padding:5px 9px;border-radius:999px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
-.card{background:rgba(255,255,255,.07);border-radius:18px;padding:10px;text-align:center}
-.val{font-size:23px;font-weight:900}
-.lab{font-size:10px;color:#aab5d8}
-.ai{margin-top:10px;font-size:13px;line-height:1.4;color:#dfe6ff}
-.controls{
-  position:absolute;z-index:999;right:10px;top:220px;display:flex;flex-direction:column;gap:9px
+.brand{
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-size:20px;
+font-weight:900;
 }
-button{
-  border:0;color:#fff;font-weight:800;border-radius:17px;padding:12px;
-  background:rgba(5,10,25,.88);border:1px solid rgba(255,255,255,.13)
+.safe{
+font-size:11px;
+padding:5px 10px;
+border-radius:999px;
+background:linear-gradient(135deg,#00d4ff,#6c4dff);
 }
-.alert{
-  position:absolute;z-index:1000;left:12px;right:12px;bottom:20px;
-  display:none;border-radius:26px;padding:18px;
-  background:linear-gradient(135deg,#ff1744,#ff9800);
-  box-shadow:0 25px 80px rgba(255,23,68,.55)
+.miniStats{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:7px;
+margin-top:10px;
 }
-.alert h2{font-size:21px;margin-bottom:5px}
-.alert p{font-size:14px}
+.stat{
+background:rgba(255,255,255,.06);
+padding:8px;
+border-radius:14px;
+text-align:center;
+}
+.num{
+font-size:21px;
+font-weight:900;
+}
+.txt{
+font-size:10px;
+color:#b5c0df;
+}
+.aiLine{
+margin-top:9px;
+font-size:12px;
+line-height:1.35;
+color:#dce5ff;
+min-height:34px;
+}
+.sideBtns{
+position:absolute;
+right:10px;
+top:180px;
+z-index:999;
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+.sideBtns button{
+border:none;
+background:rgba(4,9,22,.86);
+color:white;
+padding:12px;
+font-weight:800;
+border-radius:16px;
+font-size:12px;
+border:1px solid rgba(255,255,255,.08);
+}
 .hud{
-  position:absolute;z-index:998;left:12px;bottom:105px;
-  width:135px;height:135px;border-radius:50%;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:radial-gradient(circle,rgba(0,229,255,.22),rgba(5,10,25,.86));
-  border:2px solid rgba(0,229,255,.45)
+position:absolute;
+left:12px;
+bottom:88px;
+z-index:998;
+width:118px;
+height:118px;
+border-radius:50%;
+background:radial-gradient(circle,rgba(0,212,255,.25),rgba(4,9,22,.88));
+border:2px solid rgba(0,212,255,.35);
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+box-shadow:0 0 35px rgba(0,212,255,.25);
 }
-.hud .s{font-size:42px;font-weight:950}
-.hud .t{font-size:11px;color:#bdefff}
-.bottom{
-  position:absolute;z-index:998;left:158px;right:12px;bottom:105px;
-  border-radius:22px;padding:12px;font-size:12px;line-height:1.35;color:#dfe6ff
+.hudSpeed{
+font-size:40px;
+font-weight:900;
 }
-.dark body{}
-.night #map{filter:brightness(.68) contrast(1.25) saturate(.75)}
+.hudTxt{
+font-size:11px;
+color:#bfefff;
+}
+.routeCard{
+position:absolute;
+left:138px;
+right:12px;
+bottom:88px;
+z-index:998;
+border-radius:20px;
+padding:12px;
+font-size:12px;
+line-height:1.35;
+color:#dce5ff;
+}
+.compass{
+position:absolute;
+top:180px;
+left:12px;
+z-index:998;
+width:62px;
+height:62px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:26px;
+font-weight:900;
+}
+.approachBar{
+position:absolute;
+left:10px;
+right:10px;
+bottom:20px;
+z-index:999;
+border-radius:20px;
+padding:12px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-size:13px;
+}
+.alertBox{
+position:absolute;
+left:12px;
+right:12px;
+bottom:150px;
+z-index:1000;
+display:none;
+border-radius:22px;
+padding:16px;
+background:linear-gradient(135deg,#ff1744,#ff9800);
+box-shadow:0 25px 80px rgba(255,23,68,.5);
+}
+.alertBox h2{font-size:20px;margin-bottom:4px}
+.alertBox p{font-size:13px}
+.carIcon{
+font-size:22px;
+}
 </style>
 </head>
 <body>
-
 <div id="map"></div>
 
-<div class="top glass">
-  <div class="logo">DriveGuard AI Ultra <span>SAFE MODE</span></div>
-  <div class="stats">
-    <div class="card"><div class="val" id="speed">0</div><div class="lab">HIZ</div></div>
-    <div class="card"><div class="val" id="limit">--</div><div class="lab">LİMİT</div></div>
-    <div class="card"><div class="val" id="dist">--</div><div class="lab">MESAFE</div></div>
-    <div class="card"><div class="val" id="risk">0</div><div class="lab">RİSK</div></div>
+<div class="topBar glass">
+  <div class="brand">
+    DriveGuard AI Cockpit
+    <span class="safe">SAFE DRIVE</span>
   </div>
-  <div class="ai" id="aiText">Sistem hazır. Konum izni verildiğinde AI güvenli sürüş analizi başlayacak.</div>
+
+  <div class="miniStats">
+    <div class="stat">
+      <div class="num" id="speed">0</div>
+      <div class="txt">HIZ</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="limit">--</div>
+      <div class="txt">LİMİT</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="distance">--</div>
+      <div class="txt">MESAFE</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="risk">0</div>
+      <div class="txt">RİSK</div>
+    </div>
+  </div>
+
+  <div class="aiLine" id="aiLine">
+    AI sürüş asistanı hazır. Konum izni verildiğinde güvenlik analizi başlayacak.
+  </div>
 </div>
 
-<div class="controls">
-  <button onclick="startTrack()">BAŞLAT</button>
-  <button onclick="toggleVoice()">SES <span id="voiceText">AÇIK</span></button>
+<div class="sideBtns">
+  <button onclick="startDrive()">BAŞLAT</button>
+  <button onclick="toggleVoice()">SES <span id="voiceState">AÇIK</span></button>
   <button onclick="toggleNight()">GECE</button>
-  <button onclick="goMe()">KONUM</button>
-  <button onclick="addPoint()">NOKTA EKLE</button>
+  <button onclick="centerCar()">KONUM</button>
+  <button onclick="savePoint()">NOKTA EKLE</button>
 </div>
 
-<div class="hud glass">
-  <div class="s" id="hudSpeed">0</div>
-  <div class="t">KM/S</div>
+<div class="compass glass" id="compass">N</div>
+
+<div class="hud">
+  <div class="hudSpeed" id="hudSpeed">0</div>
+  <div class="hudTxt">KM/S</div>
 </div>
 
-<div class="bottom glass" id="routeBox">
-  Rota güvenlik paneli: En yakın EDS, okul bölgesi, kavşak ve riskli alanlar burada analiz edilir.
+<div class="routeCard glass" id="routeCard">
+  En yakın güvenlik noktası analiz ediliyor.
 </div>
 
-<div class="alert" id="alertBox">
+<div class="alertBox" id="alertBox">
   <h2 id="alertTitle">Uyarı</h2>
-  <p id="alertMsg">Yaklaşan güvenlik noktası.</p>
+  <p id="alertText">Yaklaşan güvenlik noktası.</p>
+</div>
+
+<div class="approachBar glass">
+  <div id="nextPoint">Yaklaşan nokta: --</div>
+  <div id="nextMeter">-- m</div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-let map, meMarker, meCircle;
-let currentLat=null,currentLng=null;
-let voice=true,lastWarn=0;
-let userPoints=JSON.parse(localStorage.getItem("dg_points")||"[]");
+let map;
+let carMarker;
+let accuracyCircle;
+let pathLine;
+let pathCoords = [];
+let currentLat = null;
+let currentLng = null;
+let currentHeading = 0;
+let voiceEnabled = true;
+let lastWarnTime = 0;
 
-let points=[
-{name:"EDS Hız Kamerası",lat:38.6191,lng:27.4289,limit:50,type:"camera",note:"Elektronik hız kontrol bölgesi"},
-{name:"Okul Bölgesi",lat:38.6212,lng:27.4241,limit:30,type:"school",note:"Yaya ve öğrenci geçişi yoğun"},
-{name:"Tehlikeli Kavşak",lat:38.6157,lng:27.4315,limit:50,type:"danger",note:"Kaza riski yüksek kavşak"},
-{name:"Ortalama Hız Koridoru",lat:38.6260,lng:27.4352,limit:70,type:"avg",note:"Sabit hız ve mesafe kontrol alanı"},
-...userPoints
+let userSavedPoints = JSON.parse(localStorage.getItem("driveguard_points") || "[]");
+
+const safetyPoints = [
+  {
+    name:"EDS Hız Kamerası",
+    lat:38.6191,
+    lng:27.4289,
+    limit:50,
+    type:"camera",
+    note:"Elektronik hız kontrol bölgesi"
+  },
+  {
+    name:"Okul Bölgesi",
+    lat:38.6212,
+    lng:27.4241,
+    limit:30,
+    type:"school",
+    note:"Yaya ve öğrenci geçişi yüksek alan"
+  },
+  {
+    name:"Tehlikeli Kavşak",
+    lat:38.6157,
+    lng:27.4315,
+    limit:50,
+    type:"danger",
+    note:"Kaza riski yüksek kavşak"
+  },
+  {
+    name:"Ortalama Hız Koridoru",
+    lat:38.6260,
+    lng:27.4352,
+    limit:70,
+    type:"average",
+    note:"Ortalama hız kontrol alanı"
+  },
+  ...userSavedPoints
 ];
 
-function init(){
- map=L.map("map").setView([38.6191,27.4289],14);
- L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(map);
- drawPoints();
+function initMap(){
+  map = L.map("map",{
+    zoomControl:false,
+    attributionControl:true
+  }).setView([38.6191,27.4289],14);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:19,
+    attribution:"Leaflet"
+  }).addTo(map);
+
+  drawSafetyPoints();
+
+  pathLine = L.polyline([],{
+    color:"#00d4ff",
+    weight:5,
+    opacity:.75
+  }).addTo(map);
 }
 
-function drawPoints(){
- points.forEach(p=>{
-  let c=p.type==="school"?"#00e5ff":p.type==="danger"?"#ff1744":p.type==="avg"?"#ff9800":p.type==="user"?"#00ff90":"#7c4dff";
-  let icon=L.divIcon({
-   html:`<div style="width:25px;height:25px;border-radius:50%;background:${c};border:3px solid white;box-shadow:0 0 20px ${c}"></div>`,
-   className:"",iconSize:[25,25]
+function drawSafetyPoints(){
+  safetyPoints.forEach(p=>{
+    const color =
+      p.type === "school" ? "#00e5ff" :
+      p.type === "danger" ? "#ff1744" :
+      p.type === "average" ? "#ff9800" :
+      p.type === "user" ? "#00ff90" :
+      "#7c4dff";
+
+    const symbol =
+      p.type === "school" ? "🏫" :
+      p.type === "danger" ? "⚠️" :
+      p.type === "average" ? "⏱️" :
+      p.type === "user" ? "📍" :
+      "📷";
+
+    const icon = L.divIcon({
+      html:`
+        <div style="
+          width:34px;
+          height:34px;
+          border-radius:50%;
+          background:${color};
+          border:3px solid white;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:16px;
+          box-shadow:0 0 25px ${color};
+        ">${symbol}</div>
+      `,
+      className:"",
+      iconSize:[34,34],
+      iconAnchor:[17,17]
+    });
+
+    L.marker([p.lat,p.lng],{icon})
+      .addTo(map)
+      .bindPopup(`<b>${p.name}</b><br>${p.note}<br>Limit: ${p.limit} km/s`);
   });
-  L.marker([p.lat,p.lng],{icon}).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.note}<br>Limit: ${p.limit} km/s`);
- });
 }
 
-function startTrack(){
- if(!navigator.geolocation){alert("Konum desteklenmiyor.");return;}
- navigator.geolocation.watchPosition(pos=>{
-  let lat=pos.coords.latitude,lng=pos.coords.longitude;
-  let speed=Math.round((pos.coords.speed||0)*3.6);
-  let acc=pos.coords.accuracy;
-  currentLat=lat;currentLng=lng;
-  drawMe(lat,lng,acc);
-  analyze(lat,lng,speed);
- },e=>alert("Konum izni gerekli: "+e.message),{
-  enableHighAccuracy:true,maximumAge:1000,timeout:10000
- });
+function startDrive(){
+  if(!navigator.geolocation){
+    alert("Bu cihaz konum desteği sunmuyor.");
+    return;
+  }
+
+  navigator.geolocation.watchPosition(position=>{
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const speed = Math.round((position.coords.speed || 0) * 3.6);
+    const accuracy = position.coords.accuracy;
+    const heading = position.coords.heading;
+
+    currentLat = lat;
+    currentLng = lng;
+
+    if(heading !== null && !Number.isNaN(heading)){
+      currentHeading = heading;
+    }
+
+    updateCar(lat,lng,accuracy,currentHeading);
+    updatePath(lat,lng);
+    analyzeRoad(lat,lng,speed,currentHeading);
+
+  },error=>{
+    alert("Konum izni gerekli: " + error.message);
+  },{
+    enableHighAccuracy:true,
+    maximumAge:1000,
+    timeout:10000
+  });
 }
 
-function drawMe(lat,lng,acc){
- if(!meMarker){
-  meMarker=L.marker([lat,lng]).addTo(map).bindPopup("Konumun");
-  meCircle=L.circle([lat,lng],{radius:acc,color:"#00ff90",fillColor:"#00ff90",fillOpacity:.13}).addTo(map);
-  map.setView([lat,lng],16);
- }else{
-  meMarker.setLatLng([lat,lng]);
-  meCircle.setLatLng([lat,lng]);
-  meCircle.setRadius(acc);
- }
+function updateCar(lat,lng,accuracy,heading){
+  const carIcon = L.divIcon({
+    html:`
+      <div style="
+        width:42px;
+        height:42px;
+        border-radius:50%;
+        background:linear-gradient(135deg,#00d4ff,#0066ff);
+        border:4px solid white;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        box-shadow:0 0 35px rgba(0,212,255,.8);
+        transform:rotate(${heading}deg);
+        font-size:22px;
+      ">➤</div>
+    `,
+    className:"",
+    iconSize:[42,42],
+    iconAnchor:[21,21]
+  });
+
+  if(!carMarker){
+    carMarker = L.marker([lat,lng],{icon:carIcon}).addTo(map);
+    accuracyCircle = L.circle([lat,lng],{
+      radius:accuracy,
+      color:"#00d4ff",
+      fillColor:"#00d4ff",
+      fillOpacity:.12
+    }).addTo(map);
+
+    map.setView([lat,lng],17);
+  }else{
+    carMarker.setLatLng([lat,lng]);
+    carMarker.setIcon(carIcon);
+    accuracyCircle.setLatLng([lat,lng]);
+    accuracyCircle.setRadius(accuracy);
+  }
+
+  map.setView([lat,lng],17,{animate:true});
 }
 
-function analyze(lat,lng,speed){
- document.getElementById("speed").innerText=speed;
- document.getElementById("hudSpeed").innerText=speed;
+function updatePath(lat,lng){
+  pathCoords.push([lat,lng]);
 
- let nearest=null,nd=999999;
- points.forEach(p=>{
-  let d=dist(lat,lng,p.lat,p.lng);
-  if(d<nd){nd=d;nearest=p;}
- });
+  if(pathCoords.length > 200){
+    pathCoords.shift();
+  }
 
- let limit=nearest?nearest.limit:50;
- let risk=0;
- if(nd<1200)risk+=15;
- if(nd<700)risk+=20;
- if(nd<350)risk+=25;
- if(speed>limit)risk+=25;
- if(speed>limit+15)risk+=15;
- if(nearest && nearest.type==="school")risk+=15;
- if(nearest && nearest.type==="danger")risk+=20;
- risk=Math.min(100,risk);
+  pathLine.setLatLngs(pathCoords);
+}
+function analyzeRoad(lat,lng,speed,heading){
+  document.getElementById("speed").innerText = speed;
+  document.getElementById("hudSpeed").innerText = speed;
 
- document.getElementById("limit").innerText=limit;
- document.getElementById("dist").innerText=Math.round(nd)+"m";
- document.getElementById("risk").innerText=risk;
+  const nearest = findNearestPoint(lat,lng);
+  const point = nearest.point;
+  const distance = nearest.distance;
+  const limit = point.limit || 50;
 
- let ai=`AI Analiz: ${nearest.name} yaklaşık ${Math.round(nd)} metre ileride. `;
- if(speed>limit) ai+=`Hız limitinin üzerindesin. Güvenli şekilde yavaşla.`;
- else if(nd<500) ai+=`Yaklaşan dikkat noktası var. Kontrollü ilerle.`;
- else ai+=`Sürüş stabil. Risk düşük.`;
+  let risk = 0;
 
- document.getElementById("aiText").innerText=ai;
- document.getElementById("routeBox").innerText=`En yakın nokta: ${nearest.name} • Tip: ${nearest.type.toUpperCase()} • Limit: ${limit} km/s • AI risk: ${risk}/100`;
+  if(distance < 1500) risk += 10;
+  if(distance < 900) risk += 15;
+  if(distance < 500) risk += 20;
+  if(distance < 250) risk += 25;
+  if(speed > limit) risk += 25;
+  if(speed > limit + 15) risk += 20;
+  if(point.type === "school") risk += 15;
+  if(point.type === "danger") risk += 20;
 
- if(speed>limit) warn("Hız Uyarısı",`Mevcut hız ${speed} km/s. Limit ${limit} km/s.`,"Hız limitinin üzerindesin. Güvenli şekilde yavaşla.");
- else if(nd<500) warn(nearest.name,`${Math.round(nd)} metre sonra. ${nearest.note}`,"Yaklaşan güvenlik noktası var. Dikkatli ilerle.");
+  risk = Math.min(100,risk);
+
+  document.getElementById("limit").innerText = limit;
+  document.getElementById("distance").innerText = Math.round(distance) + "m";
+  document.getElementById("risk").innerText = risk;
+  document.getElementById("compass").innerText = headingToText(heading);
+
+  document.getElementById("nextPoint").innerText = "Yaklaşan nokta: " + point.name;
+  document.getElementById("nextMeter").innerText = Math.round(distance) + " m";
+
+  let ai = `AI Analiz: ${point.name} yaklaşık ${Math.round(distance)} metre ileride. `;
+
+  if(speed > limit){
+    ai += `Hız limitinin üzerindesin. Güvenli şekilde yavaşla.`;
+  }else if(distance < 500){
+    ai += `Yaklaşan dikkat noktası var. Kontrollü ilerle.`;
+  }else{
+    ai += `Sürüş stabil. Risk düşük.`;
+  }
+
+  document.getElementById("aiLine").innerText = ai;
+
+  document.getElementById("routeCard").innerText =
+    `${point.name} • ${point.note} • Limit ${limit} km/s • AI risk ${risk}/100`;
+
+  if(speed > limit){
+    showWarning(
+      "Hız Uyarısı",
+      `Mevcut hız ${speed} km/s. Limit ${limit} km/s.`,
+      "Hız limitinin üzerindesin. Güvenli şekilde yavaşla."
+    );
+  }else if(distance < 500){
+    showWarning(
+      point.name,
+      `${Math.round(distance)} metre sonra. ${point.note}`,
+      "Yaklaşan güvenlik noktası var. Dikkatli ilerle."
+    );
+  }
 }
 
-function warn(title,msg,vmsg){
- let now=Date.now();
- if(now-lastWarn<10000)return;
- lastWarn=now;
- document.getElementById("alertTitle").innerText=title;
- document.getElementById("alertMsg").innerText=msg;
- document.getElementById("alertBox").style.display="block";
- if(voice)say(vmsg);
- if(navigator.vibrate)navigator.vibrate([250,120,250]);
- setTimeout(()=>document.getElementById("alertBox").style.display="none",6500);
+function findNearestPoint(lat,lng){
+  let nearestPoint = safetyPoints[0];
+  let nearestDistance = Infinity;
+
+  safetyPoints.forEach(p=>{
+    const d = distanceMeters(lat,lng,p.lat,p.lng);
+    if(d < nearestDistance){
+      nearestDistance = d;
+      nearestPoint = p;
+    }
+  });
+
+  return {
+    point: nearestPoint,
+    distance: nearestDistance
+  };
 }
 
-function say(t){
- if(!("speechSynthesis" in window))return;
- let u=new SpeechSynthesisUtterance(t);
- u.lang="tr-TR";u.rate=.95;
- speechSynthesis.cancel();speechSynthesis.speak(u);
+function showWarning(title,message,voiceMessage){
+  const now = Date.now();
+
+  if(now - lastWarnTime < 10000) return;
+
+  lastWarnTime = now;
+
+  document.getElementById("alertTitle").innerText = title;
+  document.getElementById("alertText").innerText = message;
+  document.getElementById("alertBox").style.display = "block";
+
+  if(voiceEnabled){
+    speak(voiceMessage);
+  }
+
+  if(navigator.vibrate){
+    navigator.vibrate([250,120,250]);
+  }
+
+  setTimeout(()=>{
+    document.getElementById("alertBox").style.display = "none";
+  },6500);
+}
+
+function speak(text){
+  if(!("speechSynthesis" in window)) return;
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "tr-TR";
+  utterance.rate = .95;
+  utterance.pitch = 1;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
 }
 
 function toggleVoice(){
- voice=!voice;
- document.getElementById("voiceText").innerText=voice?"AÇIK":"KAPALI";
+  voiceEnabled = !voiceEnabled;
+  document.getElementById("voiceState").innerText = voiceEnabled ? "AÇIK" : "KAPALI";
 }
 
 function toggleNight(){
- document.body.classList.toggle("night");
+  const current = document.getElementById("map").style.filter;
+
+  if(current){
+    document.getElementById("map").style.filter = "";
+  }else{
+    document.getElementById("map").style.filter = "brightness(.58) contrast(1.28) saturate(.75)";
+  }
 }
 
-function goMe(){
- if(currentLat&&currentLng)map.setView([currentLat,currentLng],16);
+function centerCar(){
+  if(currentLat && currentLng){
+    map.setView([currentLat,currentLng],17,{animate:true});
+  }
 }
 
-function addPoint(){
- if(!currentLat||!currentLng){alert("Önce konum alınmalı.");return;}
- let name=prompt("Nokta adı:","Dikkat Noktası");
- if(!name)return;
- let p={name,lat:currentLat,lng:currentLng,limit:50,type:"user",note:"Kullanıcı tarafından eklenen güvenlik noktası"};
- userPoints.push(p);
- localStorage.setItem("dg_points",JSON.stringify(userPoints));
- alert("Nokta eklendi. Sayfayı yenileyince haritada görünür.");
+function savePoint(){
+  if(!currentLat || !currentLng){
+    alert("Önce BAŞLAT butonuna basıp konum alınmalı.");
+    return;
+  }
+
+  const name = prompt("Nokta adı gir:", "Dikkat Noktası");
+  if(!name) return;
+
+  const point = {
+    name:name,
+    lat:currentLat,
+    lng:currentLng,
+    limit:50,
+    type:"user",
+    note:"Kullanıcı tarafından eklenen güvenlik noktası"
+  };
+
+  userSavedPoints.push(point);
+  localStorage.setItem("driveguard_points", JSON.stringify(userSavedPoints));
+
+  alert("Nokta kaydedildi. Sayfayı yenileyince haritada görünecek.");
 }
 
-function dist(lat1,lon1,lat2,lon2){
- let R=6371000;
- let dLat=(lat2-lat1)*Math.PI/180;
- let dLon=(lon2-lon1)*Math.PI/180;
- let a=Math.sin(dLat/2)**2+
- Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
- return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+function headingToText(deg){
+  if(deg === null || Number.isNaN(deg)) return "N";
+
+  const dirs = ["N","NE","E","SE","S","SW","W","NW"];
+  const index = Math.round(deg / 45) % 8;
+  return dirs[index];
 }
 
-init();
+function distanceMeters(lat1,lng1,lat2,lng2){
+  const R = 6371000;
+  const dLat = toRad(lat2-lat1);
+  const dLng = toRad(lng2-lng1);
+
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(toRad(lat1)) *
+    Math.cos(toRad(lat2)) *
+    Math.sin(dLng/2) *
+    Math.sin(dLng/2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+function toRad(value){
+  return value * Math.PI / 180;
+}
+
+initMap();
 </script>
+
 </body>
 </html>
