@@ -1,0 +1,17 @@
+{
+  "name": "DriveGuard AI Ultimate",
+  "short_name": "DriveGuard",
+  "description": "AI destekli güvenli sürüş asistanı",
+  "start_url": "./?v=10",
+  "display": "standalone",
+  "background_color": "#020713",
+  "theme_color": "#020713",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/854/854878.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
