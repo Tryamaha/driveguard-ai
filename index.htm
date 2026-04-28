@@ -3,10 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>DriveGuard AI V9</title>
+<meta name="apple-mobile-web-app-title" content="DriveGuard">
+<meta name="theme-color" content="#07111f">
+
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<title>DriveGuard AI V10 Native</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -124,6 +130,12 @@ html,body{
 }
 .alert h2{font-size:17px;margin-bottom:4px}
 .alert p{font-size:12px}
+.installHint{
+  position:absolute;z-index:60;left:14px;right:14px;
+  bottom:calc(env(safe-area-inset-bottom) + 16px);
+  display:none;border-radius:18px;padding:12px;
+  background:rgba(0,0,0,.72);font-size:12px;color:#e7ecff;
+}
 .leaflet-control-attribution{opacity:.12!important;transform:scale(.55);transform-origin:bottom right}
 </style>
 </head>
@@ -133,8 +145,8 @@ html,body{
 
 <div class="topPanel glass">
   <div class="brandRow">
-    <div class="brand">DriveGuard AI Ultimate</div>
-    <div class="pill">SAFE AI</div>
+    <div class="brand">DriveGuard AI</div>
+    <div class="pill">NATIVE</div>
   </div>
 
   <div class="metrics">
@@ -184,9 +196,36 @@ html,body{
   <p id="alertText">Yaklaşan güvenlik noktası.</p>
 </div>
 
+<div class="installHint" id="installHint">
+  iPhone’da uygulama gibi açmak için: Paylaş → Ana Ekrana Ekle.
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+const manifest = {
+  name:"DriveGuard AI Ultimate",
+  short_name:"DriveGuard",
+  description:"AI destekli güvenli sürüş asistanı",
+  start_url:"./?v=10",
+  display:"standalone",
+  background_color:"#07111f",
+  theme_color:"#07111f",
+  orientation:"portrait",
+  icons:[{
+    src:"https://cdn-icons-png.flaticon.com/512/854/854878.png",
+    sizes:"512x512",
+    type:"image/png"
+  }]
+};
+
+const manifestBlob = new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"});
+const manifestURL = URL.createObjectURL(manifestBlob);
+const manifestLink = document.createElement("link");
+manifestLink.rel = "manifest";
+manifestLink.href = manifestURL;
+document.head.appendChild(manifestLink);
+
 let map, carMarker, accuracyCircle, routeLine;
 let currentLat=null, currentLng=null, currentHeading=0;
 let voiceEnabled=true, lastWarn=0, watchId=null;
@@ -221,6 +260,7 @@ function initMap(){
   }).addTo(map);
 
   setDemoInfo();
+  showInstallHint();
 }
 
 function setDemoInfo(){
@@ -499,6 +539,15 @@ function distanceMeters(lat1,lng1,lat2,lng2){
 function setText(id,val){
   const el = document.getElementById(id);
   if(el) el.innerText = val;
+}
+
+function showInstallHint(){
+  const isStandalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+  if(!isStandalone){
+    const el = document.getElementById("installHint");
+    el.style.display = "block";
+    setTimeout(()=>{el.style.display="none"},7000);
+  }
 }
 
 initMap();
