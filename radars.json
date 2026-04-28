@@ -1,0 +1,36 @@
+{
+  "points": [
+    {
+      "name": "Manisa Ortalama Hız Koridoru",
+      "lat": 38.6260,
+      "lng": 27.4352,
+      "limit": 70,
+      "type": "average",
+      "note": "Ortalama hız ölçüm alanı"
+    },
+    {
+      "name": "Manisa EDS Hız Kamerası",
+      "lat": 38.6191,
+      "lng": 27.4289,
+      "limit": 50,
+      "type": "camera",
+      "note": "Elektronik hız kontrol bölgesi"
+    },
+    {
+      "name": "Okul Bölgesi",
+      "lat": 38.6212,
+      "lng": 27.4241,
+      "limit": 30,
+      "type": "school",
+      "note": "Yaya geçişi yoğun alan"
+    },
+    {
+      "name": "Tehlikeli Kavşak",
+      "lat": 38.6157,
+      "lng": 27.4315,
+      "limit": 50,
+      "type": "danger",
+      "note": "Kaza riski yüksek kavşak"
+    }
+  ]
+}
