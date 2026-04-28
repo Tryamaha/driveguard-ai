@@ -8,9 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="DriveGuard">
 <meta name="theme-color" content="#050814">
 
-<title>DriveGuard AI Ultimate</title>
+<title>DriveGuard AI Ultimate V6</title>
 
-<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
@@ -38,7 +37,7 @@ html,body{
 }
 
 #map.night{
-  filter:brightness(.48) contrast(1.35) saturate(.65);
+  filter:brightness(.38) contrast(1.45) saturate(.55)!important;
 }
 
 .glass{
@@ -57,6 +56,7 @@ html,body{
   z-index:900;
   border-radius:28px;
   padding:14px;
+  box-shadow:0 25px 90px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.08);
 }
 
 .brandRow{
@@ -94,6 +94,7 @@ html,body{
   text-align:center;
   background:rgba(255,255,255,.065);
   border:1px solid rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
 }
 
 .metricValue{
@@ -140,7 +141,8 @@ html,body{
 }
 
 .ctrl.primary{
-  background:linear-gradient(135deg,#00c853,#00b0ff);
+  background:linear-gradient(135deg,#00e5ff,#0077ff)!important;
+  box-shadow:0 0 28px rgba(0,229,255,.38);
 }
 
 .compass{
@@ -160,11 +162,11 @@ html,body{
 
 .speedOrb{
   position:absolute;
-  left:16px;
-  bottom:calc(env(safe-area-inset-bottom) + 132px);
+  left:24px;
+  bottom:calc(env(safe-area-inset-bottom) + 150px);
   z-index:910;
-  width:126px;
-  height:126px;
+  width:116px;
+  height:116px;
   border-radius:50%;
   background:
     radial-gradient(circle at 40% 35%,rgba(255,255,255,.92),rgba(0,229,255,.35) 28%,rgba(3,9,22,.95) 70%);
@@ -189,9 +191,9 @@ html,body{
 
 .infoCard{
   position:absolute;
-  left:154px;
+  left:168px;
   right:12px;
-  bottom:calc(env(safe-area-inset-bottom) + 140px);
+  bottom:calc(env(safe-area-inset-bottom) + 154px);
   z-index:910;
   border-radius:24px;
   padding:14px;
@@ -204,7 +206,7 @@ html,body{
   position:absolute;
   left:12px;
   right:12px;
-  bottom:calc(env(safe-area-inset-bottom) + 70px);
+  bottom:calc(env(safe-area-inset-bottom) + 58px);
   z-index:910;
   border-radius:24px;
   padding:14px 16px;
@@ -262,11 +264,17 @@ html,body{
   position:absolute;
   left:12px;
   right:12px;
-  bottom:calc(env(safe-area-inset-bottom) + 214px);
+  bottom:calc(env(safe-area-inset-bottom) + 285px);
   z-index:1190;
   display:none;
   border-radius:28px;
   padding:16px;
+  animation:aiSlide .35s ease;
+}
+
+@keyframes aiSlide{
+  from{opacity:0;transform:translateY(18px)}
+  to{opacity:1;transform:translateY(0)}
 }
 
 .aiBubbleTitle{
@@ -291,13 +299,17 @@ html,body{
 }
 
 .leaflet-control-attribution{
+  transform:scale(.65);
+  transform-origin:bottom right;
+  opacity:.25!important;
   font-size:10px!important;
-  opacity:.6;
 }
 </style>
 </head>
+
 <body>
-  <div id="map"></div>
+
+<div id="map"></div>
 
 <div class="topDock glass">
   <div class="brandRow">
@@ -369,6 +381,7 @@ html,body{
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 let map;
 let carMarker;
@@ -527,7 +540,8 @@ function updateRoute(lat,lng){
   if(traveled.length > 250) traveled.shift();
   routeLine.setLatLngs(traveled);
 }
-  function analyze(lat,lng,speed,heading){
+
+function analyze(lat,lng,speed,heading){
   document.getElementById("speed").innerText = speed;
   document.getElementById("orbSpeed").innerText = speed;
 
@@ -557,7 +571,11 @@ function updateRoute(lat,lng){
   document.getElementById("nextPoint").innerText = "Yaklaşan nokta: " + p.name;
   document.getElementById("nextMeter").innerText = Math.round(d) + " m";
 
-  let prog = 100 - Math.min(100,(d/1500)*100);
+  let prog = 100 - Math.min(100,(d/2000)*100);
+  if(d < 1000) prog += 10;
+  if(d < 500) prog += 15;
+  prog = Math.min(100, prog);
+
   document.getElementById("progress").style.width = prog + "%";
 
   let aiMsg = `AI Analiz: ${p.name} yaklaşık ${Math.round(d)} metre ileride. `;
@@ -573,7 +591,9 @@ function updateRoute(lat,lng){
   document.getElementById("infoCard").innerText =
     `${p.name} • ${p.note} • Limit ${limit} km/s • AI risk ${risk}/100`;
 
-  aiBubble(aiMsg);
+  if(risk > 15 || d < 900){
+    aiBubble(aiMsg);
+  }
 
   if(speed > limit){
     warn("Hız Uyarısı",`Mevcut hız ${speed} km/s. Limit ${limit} km/s.`,"Hız limitinin üzerindesin. Güvenli şekilde yavaşla.");
@@ -695,5 +715,6 @@ function meterDistance(lat1,lng1,lat2,lng2){
 
 initMap();
 </script>
+
 </body>
 </html>
