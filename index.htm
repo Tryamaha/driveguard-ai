@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DriveGuard AI Pro</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial;
+  background:#050814;
+  color:white;
+  overflow:hidden;
+}
+#map{height:100vh;width:100vw}
+.panel{
+  position:absolute;
+  z-index:999;
+  left:12px;
+  right:12px;
+  top:12px;
+  background:rgba(8,12,28,.82);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:22px;
+  padding:14px;
+  box-shadow:0 20px 50px rgba(0,0,0,.45);
+}
+.title{
+  font-size:20px;
+  font-weight:800;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.badge{
+  background:linear-gradient(135deg,#00e5ff,#7c4dff);
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-top:12px;
+}
+.card{
+  background:rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:10px;
+  text-align:center;
+}
+.big{font-size:22px;font-weight:800}
+.label{font-size:11px;color:#aeb6d8;margin-top:3px}
+.alert{
+  position:absolute;
+  z-index:1000;
+  left:12px;
+  right:12px;
+  bottom:20px;
+  background:linear-gradient(135deg,#ff1744,#ff9100);
+  color:white;
+  border-radius:22px;
+  padding:16px;
+  display:none;
+  box-shadow:0 20px 60px rgba(255,23,68,.45);
+}
+.alert h2{margin:0 0 6px;font-size:20px}
+.alert p{margin:0;font-size:14px}
+.controls{
+  position:absolute;
+  z-index:999;
+  right:12px;
+  top:190px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+button{
+  border:0;
+  border-radius:16px;
+  padding:12px;
+  font-weight:800;
+  color:white;
+  background:rgba(10,18,42,.9);
+  border:1px solid rgba(255,255,255,.15);
+}
+button.active{background:#00c853}
+.aiBox{
+  margin-top:10px;
+  font-size:13px;
+  color:#d5dcff;
+  line-height:1.35;
+}
+.pulse{
+  width:18px;height:18px;
+  border-radius:50%;
+  background:#00e676;
+  box-shadow:0 0 0 0 rgba(0,230,118,.8);
+  animation:pulse 1.5s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(0,230,118,.8)}
+  70%{box-shadow:0 0 0 18px rgba(0,230,118,0)}
+  100%{box-shadow:0 0 0 0 rgba(0,230,118,0)}
+}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div class="panel">
+  <div class="title">
+    DriveGuard AI Pro
+    <div class="pulse"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="big" id="speed">0</div>
+      <div class="label">Hız km/s</div>
+    </div>
+    <div class="card">
+      <div class="big" id="limit">--</div>
+      <div class="label">Limit</div>
+    </div>
+    <div class="card">
+      <div class="big" id="risk">0</div>
+      <div class="label">AI Risk</div>
+    </div>
+  </div>
+
+  <div class="aiBox" id="aiText">
+    Sistem hazır. Konum izni verildiğinde güvenli sürüş uyarıları başlayacak.
+  </div>
+</div>
+
+<div class="controls">
+  <button onclick="startTracking()" class="active">Başlat</button>
+  <button onclick="toggleVoice()">Ses: <span id="voiceState">Açık</span></button>
+  <button onclick="centerMe()">Konumum</button>
+</div>
+
+<div class="alert" id="alertBox">
+  <h2 id="alertTitle">Uyarı</h2>
+  <p id="alertMsg">Yakında dikkat noktası var.</p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let map, userMarker, accuracyCircle;
+let watchId = null;
+let voiceOn = true;
+let lastAlertTime = 0;
+let currentLat = null;
+let currentLng = null;
+
+const safetyPoints = [
+  {
+    name:"EDS / Hız Kontrol Noktası",
+    type:"camera",
+    lat:38.6191,
+    lng:27.4289,
+    limit:50,
+    note:"Şehir içi hız ve kavşak güvenliği noktası"
+  },
+  {
+    name:"Okul Bölgesi",
+    type:"school",
+    lat:38.6205,
+    lng:27.4215,
+    limit:30,
+    note:"Yaya ve öğrenci geçişi yüksek"
+  },
+  {
+    name:"Tehlikeli Kavşak",
+    type:"danger",
+    lat:38.6159,
+    lng:27.4308,
+    limit:50,
+    note:"Kaza riski yüksek kavşak"
+  },
+  {
+    name:"Ortalama Hız Koridoru",
+    type:"average",
+    lat:38.6254,
+    lng:27.4351,
+    limit:70,
+    note:"Sabit hız ve mesafe kontrol alanı"
+  }
+];
+
+function initMap(){
+  map = L.map("map").setView([38.6191,27.4289], 14);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom:19,
+    attribution:"© OpenStreetMap"
+  }).addTo(map);
+
+  safetyPoints.forEach(p=>{
+    const color = p.type==="school" ? "#00e5ff" :
+                  p.type==="danger" ? "#ff1744" :
+                  p.type==="average" ? "#ff9100" : "#7c4dff";
+
+    const icon = L.divIcon({
+      html:`<div style="
+        width:26px;height:26px;border-radius:50%;
+        background:${color};
+        border:3px solid white;
+        box-shadow:0 0 20px ${color};
+      "></div>`,
+      className:"",
+      iconSize:[26,26]
+    });
+
+    L.marker([p.lat,p.lng],{icon})
+      .addTo(map)
+      .bindPopup(`<b>${p.name}</b><br>${p.note}<br>Limit: ${p.limit} km/s`);
+  });
+}
+
+function startTracking(){
+  if(!navigator.geolocation){
+    alert("Bu cihaz konum desteği sunmuyor.");
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(pos=>{
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const speed = Math.round((pos.coords.speed || 0) * 3.6);
+    const accuracy = pos.coords.accuracy;
+
+    currentLat = lat;
+    currentLng = lng;
+
+    updateUser(lat,lng,accuracy);
+    analyzeDriving(lat,lng,speed);
+
+  }, err=>{
+    alert("Konum izni gerekiyor: " + err.message);
+  }, {
+    enableHighAccuracy:true,
+    maximumAge:1000,
+    timeout:10000
+  });
+}
+
+function updateUser(lat,lng,accuracy){
+  if(!userMarker){
+    userMarker = L.marker([lat,lng]).addTo(map).bindPopup("Senin konumun");
+    accuracyCircle = L.circle([lat,lng],{
+      radius:accuracy,
+      color:"#00e676",
+      fillColor:"#00e676",
+      fillOpacity:.12
+    }).addTo(map);
+    map.setView([lat,lng],16);
+  }else{
+    userMarker.setLatLng([lat,lng]);
+    accuracyCircle.setLatLng([lat,lng]);
+    accuracyCircle.setRadius(accuracy);
+  }
+}
+
+function analyzeDriving(lat,lng,speed){
+  document.getElementById("speed").innerText = speed;
+
+  let nearest = null;
+  let nearestDistance = Infinity;
+
+  safetyPoints.forEach(p=>{
+    const d = distanceMeters(lat,lng,p.lat,p.lng);
+    if(d < nearestDistance){
+      nearestDistance = d;
+      nearest = p;
+    }
+  });
+
+  let limit = nearest ? nearest.limit : "--";
+  document.getElementById("limit").innerText = limit;
+
+  let risk = 0;
+
+  if(nearestDistance < 1000) risk += 20;
+  if(nearestDistance < 500) risk += 25;
+  if(nearestDistance < 250) risk += 30;
+  if(speed > limit) risk += 35;
+  if(speed > limit + 15) risk += 25;
+
+  risk = Math.min(100,risk);
+  document.getElementById("risk").innerText = risk;
+
+  let aiText = "AI Analiz: ";
+
+  if(!nearest){
+    aiText += "Yakında kayıtlı dikkat noktası yok.";
+  }else{
+    aiText += `En yakın nokta: ${nearest.name}. Mesafe yaklaşık ${Math.round(nearestDistance)} metre. `;
+    if(speed > limit){
+      aiText += `Hız limitinin üzerindesin. Güvenli şekilde yavaşla.`;
+    }else if(nearestDistance < 500){
+      aiText += `Dikkatli ilerle, hızını koru.`;
+    }else{
+      aiText += `Sürüş normal görünüyor.`;
+    }
+  }
+
+  document.getElementById("aiText").innerText = aiText;
+
+  if(nearestDistance < 500){
+    showAlert(
+      nearest.name,
+      `${Math.round(nearestDistance)} metre sonra. Limit: ${limit} km/s. ${nearest.note}`,
+      speed > limit
+        ? "Hız limitinin üzerindesin. Güvenli şekilde yavaşla."
+        : "Yakında dikkat noktası var."
+    );
+  }
+
+  if(speed > limit && limit !== "--"){
+    showAlert(
+      "Hız Uyarısı",
+      `Mevcut hız: ${speed} km/s. Limit: ${limit} km/s.`,
+      "Hız limitini aşıyorsun. Güvenli şekilde yavaşla."
+    );
+  }
+}
+
+function showAlert(title,msg,voiceMsg){
+  const now = Date.now();
+  if(now - lastAlertTime < 12000) return;
+  lastAlertTime = now;
+
+  const box = document.getElementById("alertBox");
+  document.getElementById("alertTitle").innerText = title;
+  document.getElementById("alertMsg").innerText = msg;
+  box.style.display = "block";
+
+  if(voiceOn) speak(voiceMsg);
+
+  if(navigator.vibrate){
+    navigator.vibrate([300,150,300]);
+  }
+
+  setTimeout(()=>{
+    box.style.display = "none";
+  },7000);
+}
+
+function speak(text){
+  if(!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "tr-TR";
+  u.rate = .95;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function toggleVoice(){
+  voiceOn = !voiceOn;
+  document.getElementById("voiceState").innerText = voiceOn ? "Açık" : "Kapalı";
+}
+
+function centerMe(){
+  if(currentLat && currentLng){
+    map.setView([currentLat,currentLng],16);
+  }
+}
+
+function distanceMeters(lat1,lng1,lat2,lng2){
+  const R = 6371000;
+  const dLat = toRad(lat2-lat1);
+  const dLng = toRad(lng2-lng1);
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  return R * c;
+}
+
+function toRad(v){
+  return v * Math.PI / 180;
+}
+
+initMap();
+</script>
+
+</body>
+</html>
